@@ -1,2 +1,2 @@
 # HotWheelsBasketball
-Wheels Chair Basketball
+WheelChair Basketball
