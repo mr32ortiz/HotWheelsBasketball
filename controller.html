@@ -1,0 +1,347 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HotWheels Basketball Controller</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: #10141c;
+    color: #f5f7fb;
+    font-family: Arial, sans-serif;
+  }
+  h1 { margin: 4px 0 6px; font-size: 24px; }
+  p { color: #aeb8c8; font-size: 14px; }
+  .card {
+    background: #1b2330;
+    border: 1px solid #303b4d;
+    border-radius: 14px;
+    padding: 16px;
+    margin: 14px auto;
+    max-width: 650px;
+  }
+  .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .team {
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    min-width: 0;
+  }
+  .team h2 { margin: 0 0 10px; font-size: 18px; }
+  .score { font-size: 54px; font-weight: 900; margin: 8px 0; }
+  button, input, select {
+    font: inherit;
+    border-radius: 8px;
+    border: 1px solid #445168;
+  }
+  button {
+    padding: 12px;
+    background: #303c50;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button:active { transform: scale(.98); }
+  .score-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .minus { background: #522d38; }
+  .plus { background: #235641; }
+  .wide { width: 100%; margin-top: 8px; }
+  label { display: block; font-size: 13px; color: #c5cedb; margin: 10px 0 5px; }
+  input, select {
+    width: 100%;
+    padding: 11px;
+    background: #0e131c;
+    color: white;
+  }
+  input[type="color"] { height: 44px; padding: 4px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .status { font-weight: 700; color: #f7c66a; }
+  .good { color: #65d69a; }
+  .bad { color: #ff8585; }
+  .quarter-buttons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  small { color: #aeb8c8; }
+  @media (max-width: 420px) {
+    body { padding: 9px; }
+    .card { padding: 11px; }
+    .score { font-size: 42px; }
+    .team { padding: 8px 5px; }
+    button { padding: 11px 6px; }
+  }
+</style>
+</head>
+<body>
+<div style="max-width:650px;margin:auto">
+  <h1>🏀 HotWheels Basketball</h1>
+  <p>Scoreboard remote control</p>
+  <p id="status" class="status">Not connected — enter your Supabase details below.</p>
+
+  <div class="card">
+    <div class="teams">
+      <div class="team" id="homePanel">
+        <h2 id="homeTitle">HOME</h2>
+        <div class="score" id="homeScore">0</div>
+        <div class="score-buttons">
+          <button class="minus" onclick="changeScore('home',-1)">−1</button>
+          <button class="plus" onclick="changeScore('home',1)">+1</button>
+          <button class="plus" onclick="changeScore('home',2)">+2</button>
+        </div>
+        <button class="plus wide" onclick="changeScore('home',3)">+3 POINTS</button>
+      </div>
+
+      <div class="team" id="awayPanel">
+        <h2 id="awayTitle">AWAY</h2>
+        <div class="score" id="awayScore">0</div>
+        <div class="score-buttons">
+          <button class="minus" onclick="changeScore('away',-1)">−1</button>
+          <button class="plus" onclick="changeScore('away',1)">+1</button>
+          <button class="plus" onclick="changeScore('away',2)">+2</button>
+        </div>
+        <button class="plus wide" onclick="changeScore('away',3)">+3 POINTS</button>
+      </div>
+    </div>
+    <button class="wide" onclick="setScoreManually()">Set scores manually</button>
+
+    <label>Quarter / period</label>
+    <div class="quarter-buttons">
+      <button onclick="setQuarter('Q1')">Q1</button>
+      <button onclick="setQuarter('Q2')">Q2</button>
+      <button onclick="setQuarter('Q3')">Q3</button>
+      <button onclick="setQuarter('Q4')">Q4</button>
+      <button onclick="setQuarter('OT')">OT</button>
+    </div>
+    <button class="wide" onclick="resetScores()">Reset scores</button>
+  </div>
+
+  <div class="card">
+    <h2>Customize teams</h2>
+    <div class="form-grid">
+      <div>
+        <label>Home team name</label>
+        <input id="homeNameInput" value="HOME" maxlength="24">
+      </div>
+      <div>
+        <label>Away team name</label>
+        <input id="awayNameInput" value="AWAY" maxlength="24">
+      </div>
+      <div>
+        <label>Home team color</label>
+        <input id="homeColorInput" type="color" value="#c62828">
+      </div>
+      <div>
+        <label>Away team color</label>
+        <input id="awayColorInput" type="color" value="#174ea6">
+      </div>
+    </div>
+    <label>Home logo image URL (optional)</label>
+    <input id="homeLogoInput" placeholder="https://example.com/home-logo.png">
+    <label>Away logo image URL (optional)</label>
+    <input id="awayLogoInput" placeholder="https://example.com/away-logo.png">
+    <button class="wide" onclick="applyCustomization()">Apply team customization</button>
+  </div>
+
+  <div class="card">
+    <h2>Connect to your scoreboard</h2>
+    <p>Use a Supabase project and its project URL and public anon key. Both the controller and overlay must use the same details and room name.</p>
+    <label>Supabase project URL</label>
+    <input id="urlInput" placeholder="https://your-project.supabase.co">
+    <label>Supabase public anon key</label>
+    <input id="keyInput" placeholder="Paste your public anon key">
+    <label>Room name — must match on both pages</label>
+    <input id="roomInput" value="hotwheels-basketball">
+    <button class="wide" onclick="connect()">Connect / reconnect</button>
+    <button class="wide" onclick="copyOverlayUrl()">Copy Streamlabs overlay URL</button>
+    <small id="copyHelp">Connect first to generate the URL with your connection settings.</small>
+  </div>
+</div>
+
+<script>
+const defaults = {
+  homeName: "HOME", awayName: "AWAY",
+  homeScore: 0, awayScore: 0, quarter: "Q1",
+  homeColor: "#c62828", awayColor: "#174ea6",
+  homeLogo: "", awayLogo: ""
+};
+
+let state = { ...defaults };
+let client = null;
+let channel = null;
+let connected = false;
+
+const $ = id => document.getElementById(id);
+
+function updateDisplay() {
+  $("homeTitle").textContent = state.homeName;
+  $("awayTitle").textContent = state.awayName;
+  $("homeScore").textContent = state.homeScore;
+  $("awayScore").textContent = state.awayScore;
+  $("homePanel").style.background = state.homeColor;
+  $("awayPanel").style.background = state.awayColor;
+  $("homePanel").style.color = "white";
+  $("awayPanel").style.color = "white";
+}
+
+function saveState() {
+  localStorage.setItem("hwBasketballState", JSON.stringify(state));
+}
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("hwBasketballState"));
+    if (saved) state = { ...defaults, ...saved };
+  } catch (e) {}
+  updateDisplay();
+  $("homeNameInput").value = state.homeName;
+  $("awayNameInput").value = state.awayName;
+  $("homeColorInput").value = state.homeColor;
+  $("awayColorInput").value = state.awayColor;
+  $("homeLogoInput").value = state.homeLogo;
+  $("awayLogoInput").value = state.awayLogo;
+}
+
+function setStatus(message, className = "") {
+  $("status").textContent = message;
+  $("status").className = "status " + className;
+}
+
+function sendState() {
+  updateDisplay();
+  saveState();
+  if (connected && channel) {
+    channel.send({
+      type: "broadcast",
+      event: "state",
+      payload: state
+    });
+  }
+}
+
+function changeScore(team, amount) {
+  const key = team + "Score";
+  state[key] = Math.max(0, Number(state[key]) + amount);
+  sendState();
+}
+
+function setQuarter(q) {
+  state.quarter = q;
+  sendState();
+}
+
+function resetScores() {
+  if (!confirm("Reset both scores to zero?")) return;
+  state.homeScore = 0;
+  state.awayScore = 0;
+  sendState();
+}
+
+function setScoreManually() {
+  const home = prompt("Enter home team score:", state.homeScore);
+  if (home === null) return;
+  const away = prompt("Enter away team score:", state.awayScore);
+  if (away === null) return;
+  const h = Number(home), a = Number(away);
+  if (!Number.isInteger(h) || !Number.isInteger(a) || h < 0 || a < 0) {
+    alert("Enter whole-number scores of zero or greater.");
+    return;
+  }
+  state.homeScore = h;
+  state.awayScore = a;
+  sendState();
+}
+
+function applyCustomization() {
+  state.homeName = $("homeNameInput").value.trim() || "HOME";
+  state.awayName = $("awayNameInput").value.trim() || "AWAY";
+  state.homeColor = $("homeColorInput").value;
+  state.awayColor = $("awayColorInput").value;
+  state.homeLogo = $("homeLogoInput").value.trim();
+  state.awayLogo = $("awayLogoInput").value.trim();
+  sendState();
+}
+
+async function connect() {
+  const url = $("urlInput").value.trim();
+  const key = $("keyInput").value.trim();
+  const room = $("roomInput").value.trim() || "hotwheels-basketball";
+
+  if (!url || !key) {
+    setStatus("Enter the Supabase project URL and public anon key.", "bad");
+    return;
+  }
+
+  if (channel) {
+    try { await client.removeChannel(channel); } catch (e) {}
+  }
+
+  try {
+    client = window.supabase.createClient(url, key);
+    connected = false;
+    channel = client.channel("score-room-" + room, {
+      config: { broadcast: { self: false } }
+    });
+
+    channel
+      .on("broadcast", { event: "request" }, () => {
+        channel.send({
+          type: "broadcast",
+          event: "state",
+          payload: state
+        });
+      })
+      .subscribe(status => {
+        if (status === "SUBSCRIBED") {
+          connected = true;
+          localStorage.setItem("hwBasketballUrl", url);
+          localStorage.setItem("hwBasketballKey", key);
+          localStorage.setItem("hwBasketballRoom", room);
+          setStatus("Connected — scoreboard is ready.", "good");
+          sendState();
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          connected = false;
+          setStatus("Connection failed. Check your project URL, key, and internet connection.", "bad");
+        } else {
+          setStatus("Connecting…");
+        }
+      });
+  } catch (error) {
+    connected = false;
+    setStatus("Could not connect. Check the settings and try again.", "bad");
+  }
+}
+
+function copyOverlayUrl() {
+  const url = localStorage.getItem("hwBasketballUrl") || $("urlInput").value.trim();
+  const key = localStorage.getItem("hwBasketballKey") || $("keyInput").value.trim();
+  const room = localStorage.getItem("hwBasketballRoom") || $("roomInput").value.trim();
+
+  if (!url || !key || !room) {
+    alert("Enter your Supabase details and connect first.");
+    return;
+  }
+
+  const overlay = new URL("index.html", location.href);
+  overlay.searchParams.set("url", url);
+  overlay.searchParams.set("key", key);
+  overlay.searchParams.set("room", room);
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(overlay.href)
+      .then(() => alert("Overlay URL copied! Paste it into Streamlabs Browser Source."))
+      .catch(() => prompt("Copy this overlay URL:", overlay.href));
+  } else {
+    prompt("Copy this overlay URL:", overlay.href);
+  }
+}
+
+loadState();
+
+$("urlInput").value = localStorage.getItem("hwBasketballUrl") || "";
+$("keyInput").value = localStorage.getItem("hwBasketballKey") || "";
+$("roomInput").value = localStorage.getItem("hwBasketballRoom") || "hotwheels-basketball";
+</script>
+</body>
+</html>
