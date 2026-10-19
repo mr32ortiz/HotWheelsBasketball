@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HotWheels Basketball Overlay</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    font-family: Arial, Helvetica, sans-serif;
+    color: white;
+    overflow: hidden;
+  }
+
+  .stage {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .scorebar {
+    display: flex;
+    align-items: stretch;
+    width: min(100%, 1100px);
+    height: 92px;
+    background: #10141c;
+    border: 2px solid rgba(255,255,255,.85);
+    border-radius: 9px;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(0,0,0,.4);
+  }
+
+  .team {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+    padding: 10px 22px;
+  }
+
+  .team.away { flex-direction: row-reverse; text-align: right; }
+
+  .logo {
+    width: 62px;
+    height: 62px;
+    flex: 0 0 62px;
+    object-fit: contain;
+    display: none;
+  }
+
+  .team-name {
+    font-size: clamp(16px, 2.3vw, 27px);
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .score {
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 900;
+    min-width: 55px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .middle {
+    width: 90px;
+    flex: 0 0 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #10141c;
+    border-left: 2px solid rgba(255,255,255,.25);
+    border-right: 2px solid rgba(255,255,255,.25);
+  }
+
+  .quarter {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 1px;
+  }
+
+  .quarter-label {
+    display: block;
+    font-size: 10px;
+    color: #c9ced8;
+    margin-bottom: 4px;
+    letter-spacing: 2px;
+  }
+
+  @media (max-width: 600px) {
+    .stage { padding: 4px; }
+    .scorebar { height: 70px; }
+    .team { gap: 6px; padding: 6px; }
+    .logo { width: 38px; height: 38px; flex-basis: 38px; }
+    .score { min-width: 35px; }
+    .middle { width: 62px; flex-basis: 62px; }
+    .quarter { font-size: 16px; }
+    .team-name { letter-spacing: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="scorebar">
+    <div class="team home" id="homePanel">
+      <img class="logo" id="homeLogo" alt="Home team logo">
+      <div class="team-name" id="homeName">HOME</div>
+      <div class="score" id="homeScore">0</div>
+    </div>
+
+    <div class="middle">
+      <div class="quarter">
+        <span class="quarter-label">PERIOD</span>
+        <span id="quarter">Q1</span>
+      </div>
+    </div>
+
+    <div class="team away" id="awayPanel">
+      <img class="logo" id="awayLogo" alt="Away team logo">
+      <div class="team-name" id="awayName">AWAY</div>
+      <div class="score" id="awayScore">0</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const room = params.get("room") || "hotwheels-basketball";
+
+const defaults = {
+  homeName: "HOME",
+  awayName: "AWAY",
+  homeScore: 0,
+  awayScore: 0,
+  quarter: "Q1",
+  homeColor: "#c62828",
+  awayColor: "#174ea6",
+  homeLogo: "",
+  awayLogo: ""
+};
+
+function render(s) {
+  const state = { ...defaults, ...s };
+
+  document.getElementById("homeName").textContent = state.homeName;
+  document.getElementById("awayName").textContent = state.awayName;
+  document.getElementById("homeScore").textContent = state.homeScore;
+  document.getElementById("awayScore").textContent = state.awayScore;
+  document.getElementById("quarter").textContent = state.quarter;
+
+  document.getElementById("homePanel").style.background = state.homeColor;
+  document.getElementById("awayPanel").style.background = state.awayColor;
+
+  setLogo("homeLogo", state.homeLogo);
+  setLogo("awayLogo", state.awayLogo);
+}
+
+function setLogo(id, url) {
+  const img = document.getElementById(id);
+  if (url) {
+    img.src = url;
+    img.style.display = "block";
+    img.onerror = () => { img.style.display = "none"; };
+  } else {
+    img.removeAttribute("src");
+    img.style.display = "none";
+  }
+}
+
+render(defaults);
+
+const supabaseUrl = params.get("url");
+const supabaseKey = params.get("key");
+
+if (supabaseUrl && supabaseKey && window.supabase) {
+  const client = window.supabase.createClient(supabaseUrl, supabaseKey);
+  const channel = client.channel("score-room-" + room, {
+    config: { broadcast: { self: false } }
+  });
+
+  channel
+    .on("broadcast", { event: "state" }, ({ payload }) => {
+      if (payload) render(payload);
+    })
+    .subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        channel.send({
+          type: "broadcast",
+          event: "request",
+          payload: { room }
+        });
+      }
+    });
+}
+</script>
+</body>
+</html>
