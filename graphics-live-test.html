@@ -1,0 +1,36 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LA HotWheels | Live Test</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;color:white;font-family:Impact,"Arial Narrow",Arial,sans-serif}
+#screen{position:fixed;inset:0;display:none;overflow:hidden;background:#030815}#screen.on{display:block}
+#stage{position:absolute;width:1920px;height:1080px;left:50%;top:50%;transform:translate(-50%,-50%) scale(var(--scale,1));transform-origin:center}
+.art{position:absolute;inset:0;background-size:100% 100%}
+.intermission .art{background-image:url('intermission.jpg')}.upnext .art{background-image:url('upnext.jpg')}.halftime .art{background-image:url('halftime.jpg')}
+.dynamic{position:absolute;inset:0}.intermission .dynamic{display:none}
+.patch{position:absolute;top:45.6%;height:23.4%;width:36.8%;display:flex;align-items:center;justify-content:space-around;gap:12px;overflow:hidden;isolation:isolate;filter:drop-shadow(0 2px 2px #0009)}
+.patch.home{left:9.5%;clip-path:polygon(0 0,83% 0,100% 100%,0 100%);padding:0 11% 0 1%;background:linear-gradient(130deg,#6a0209,#b90d16 45%,#26020a 95%)}
+.patch.away{left:53.8%;clip-path:polygon(17% 0,100% 0,100% 100%,0 100%);padding:0 1% 0 11%;background:linear-gradient(230deg,#062052,#1154ba 45%,#020b27 95%)}
+.patch:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,#ffffff20,transparent 24%,#0009 100%)}
+.logo{width:45%;max-height:85%;object-fit:contain;filter:drop-shadow(0 5px 8px #000b)}
+.fallback{font:italic 900 38px Impact,Arial,sans-serif;max-width:48%;overflow-wrap:anywhere;text-align:center;text-shadow:0 4px 5px black}
+.points{font:900 132px Impact,Arial,sans-serif;line-height:1;color:#f3f5fa;text-shadow:0 5px 0 #666d7b,0 9px 9px #000d}
+.name{position:absolute;top:70%;height:7.4%;display:flex;align-items:center;justify-content:center;color:#101014;font:italic 900 53px Impact,Arial,sans-serif;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;background:linear-gradient(#fff,#e5e7e9 60%,#b0b4ba)}
+.name.home{left:10.5%;width:35.7%;clip-path:polygon(0 0,93% 0,100% 100%,6% 100%)}
+.name.away{left:54%;width:35.3%;clip-path:polygon(8% 0,100% 0,94% 100%,0 100%)}
+.upnext .patch{top:45.6%;height:23.4%}.upnext .patch .points{display:none}
+.upnext .patch .logo{width:70%}.upnext .patch .fallback{max-width:80%}
+.footer{position:absolute;top:84%;left:28%;width:44%;height:7%;display:flex;align-items:center;justify-content:center;font:italic 900 35px Impact,Arial,sans-serif;letter-spacing:3px;text-align:center;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-shadow:0 3px 5px #000;background:linear-gradient(90deg,#10204d,#06112b 50%,#103773);clip-path:polygon(5% 0,95% 0,100% 100%,0 100%)}
+.halftime .footer{display:none}
+.controls{position:fixed;top:12px;left:12px;z-index:99;background:#06112deb;padding:10px;border-radius:8px;font:14px Arial}.controls[hidden]{display:none}.controls button{padding:9px;margin:2px;color:white;background:#1956a5;border:0;border-radius:4px;cursor:pointer}
+</style></head><body><div id="screen"><div id="stage"><div class="art"></div><div id="dynamic" class="dynamic"></div></div></div><div class="controls" id="controls" hidden><b>Live integration TEST</b><div><button onclick="test('intermission')">Intermission</button><button onclick="test('upnext')">Up Next</button><button onclick="test('halftime')">Halftime</button><button onclick="test('hidden')">Hide</button></div><small>Demo uses sample teams. Live URL receives Supabase updates.</small></div><script>
+const q=new URLSearchParams(location.search),preview=q.get('preview')==='1';
+let g={screen:'hidden',nextHome:'THE PACK',nextAway:'HOOPERS',nextHomeColor:'#ad1026',nextAwayColor:'#1254b9',nextHomeLogo:'',nextAwayLogo:'',nextTime:'NEXT GAME — COMING UP'};
+let s={homeName:'THE PACK',awayName:'HOOPERS',homeScore:42,awayScore:38,homeColor:'#ad1026',awayColor:'#1254b9',homeLogo:'',awayLogo:''};
+let previewScreen='halftime';
+function fit(){document.getElementById('stage').style.setProperty('--scale',Math.min(innerWidth/1920,innerHeight/1080))}addEventListener('resize',fit);fit();
+function elem(tag,cls,text){const e=document.createElement(tag);e.className=cls;if(text!==undefined)e.textContent=String(text);return e}
+function safeColor(v,def){return /^#[0-9a-f]{6}$/i.test(v||'')?v:def}
+function team(side,name,color,logo,score,mode){const patch=elem('div','patch '+side),nameplate=elem('div','name '+side,name||'TEAM');patch.style.background=side==='home'?`linear-gradient(130deg,#170409,${safeColor(color,'#a30c1a')} 47%,#15050c)`:`linear-gradient(230deg,#06102b,${safeColor(color,'#1254b9')} 47%,#03091b)`;if(typeof logo==='string'&&/^(https?:\/\/|data:image\/|\/|\.\/)/i.test(logo)){const img=elem('img','logo');img.src=logo;img.alt=name;img.onerror=()=>img.replaceWith(elem('div','fallback',name||'TEAM'));patch.append(img)}else patch.append(elem('div','fallback',name||'TEAM'));if(mode==='halftime')patch.append(elem('div','points',Math.max(0,Number(score)||0)));return [patch,nameplate]}
+function render(){const mode=preview?previewScreen:g.screen,root=document.getElementById('screen'),dyn=document.getElementById('dynamic');root.className='';dyn.replaceChildren();if(!['intermission','upnext','halftime'].includes(mode))return;root.className='on '+mode;if(mode==='intermission')return;const half=mode==='halftime';dyn.append(...team('home',half?s.homeName:g.nextHome,half?s.homeColor:g.nextHomeColor,half?s.homeLogo:g.nextHomeLogo,s.homeScore,mode),...team('away',half?s.awayName:g.nextAway,half?s.awayColor:g.nextAwayColor,half?s.awayLogo:g.nextAwayLogo,s.awayScore,mode));if(!half)dyn.append(elem('div','footer',g.nextTime||'NEXT GAME — COMING UP'))}
+function test(v){if(!preview)return;previewScreen=v;render()}if(preview)document.getElementById('controls').hidden=false;render();
+const url=q.get('url'),key=q.get('key'),room=q.get('room')||'basketball1';
+if(url&&key&&window.supabase){const client=window.supabase.createClient(url,key),channel=client.channel('score-room-'+room,{config:{broadcast:{self:false}}});channel.on('broadcast',{event:'state'},({payload})=>{if(payload&&typeof payload==='object'){s={...s,...payload};render()}}).on('broadcast',{event:'graphics-state'},({payload})=>{if(payload&&typeof payload==='object'){g={...g,...payload};render()}}).subscribe(status=>{if(status==='SUBSCRIBED')channel.send({type:'broadcast',event:'request',payload:{room}})})}
+</script></body></html>
