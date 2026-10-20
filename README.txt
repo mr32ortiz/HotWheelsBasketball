@@ -1,21 +1,12 @@
-LA HOTWHEELS LIVE GRAPHICS PACKAGE
+LA HOTWHEELS GRAPHICS UPGRADE
 
-FILES TO UPLOAD TO THE ROOT OF YOUR EXISTING GITHUB REPO:
-- graphics.html (replace existing graphics.html)
-- intermission-art.jpg
-- arena-art.jpg
-- hotwheels.jpg
+1. Open your existing GitHub repository: mr32ortiz/HotWheelsBasketball.
+2. Upload the FIVE files from this folder into the repository ROOT (same location as index.html and controller.html).
+3. Overwrite graphics.html and intermission-art.jpg if GitHub asks. Keep controller.html and index.html untouched.
+4. Commit changes and wait for GitHub Pages to deploy.
+5. Preview: https://mr32ortiz.github.io/HotWheelsBasketball/graphics.html?preview=1
+6. Test live from your existing controller's Intermission / Up Next / Halftime / Hide buttons.
 
-DO NOT MODIFY controller.html, controller-backup.html OR index.html.
+IMPORTANT: This is a closer dynamic recreation of the original ESPN-inspired mockup, NOT the exact static image for Up Next and Halftime. Live team names, team logos and scores must remain separate from the background to update.
 
-TEST PREVIEW:
-https://mr32ortiz.github.io/HotWheelsBasketball/graphics.html?preview=1
-
-LIVE: Use your controller's Copy Graphics URL. Keep existing Streamlabs browser source URL.
-
-NOTES:
-- Intermission is the actual top portion of the approved composite mockup.
-- Up Next and Halftime are LIVE editable designs on top of a softened arena-art background; these screens are close interpretations, not pixel-exact copies of the mockup.
-- If no logo appears on a team, supply its team logo URL in the controller.
-- Graphics state uses existing Supabase Realtime 'graphics-state' event and scoring uses 'state'.
-- Broadcast messages are transient; if you refresh the graphics browser source while it is live, press the desired graphics button again on the controller.
+Files: graphics.html, hotwheels.jpg, intermission-art.jpg, upnext-arena.jpg, halftime-arena.jpg
