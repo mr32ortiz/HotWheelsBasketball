@@ -1,0 +1,457 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LA HotWheels | Broadcast Graphics</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --host: #e53935;
+  --home: #c62828;
+  --away: #174ea6;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+}
+#screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 50% 10%, #26354c, transparent 65%),
+    linear-gradient(135deg, #0d1420, #080b12);
+  overflow: hidden;
+  isolation: isolate;
+}
+#screen.visible { display: flex; }
+#screen::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: repeating-linear-gradient(
+    115deg,
+    transparent 0 140px,
+    rgba(255,255,255,.035) 142px 145px
+  );
+  animation: drift 22s linear infinite;
+  z-index: -1;
+}
+#screen::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 11px;
+  background: var(--host);
+  box-shadow: 0 0 45px var(--host);
+}
+@keyframes drift {
+  to { transform: translateX(240px); }
+}
+@keyframes appear {
+  from { opacity: 0; transform: translateY(25px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.content {
+  width: min(92vw, 1500px);
+  text-align: center;
+  animation: appear .65s ease both;
+}
+.host-logo {
+  display: none;
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  margin: 0 auto 18px;
+}
+.eyebrow {
+  font-size: clamp(14px, 2vw, 26px);
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #d4dae5;
+}
+.headline {
+  font-size: clamp(42px, 7.5vw, 125px);
+  line-height: 1.04;
+  font-weight: 900;
+  margin: 28px 0;
+  text-transform: uppercase;
+}
+.subtitle {
+  font-size: clamp(18px, 2.4vw, 34px);
+  color: #c8d0df;
+}
+.matchup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 3vw, 50px);
+  margin: 38px auto;
+}
+.team {
+  width: 41%;
+  min-height: 250px;
+  border-top: 9px solid var(--team);
+  border-radius: 18px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--team) 30%, #111927),
+    #111722
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 25px 12px;
+  gap: 12px;
+}
+.team-logo {
+  width: clamp(65px, 10vw, 150px);
+  height: clamp(65px, 10vw, 150px);
+  object-fit: contain;
+}
+.team-name {
+  font-size: clamp(20px, 3.5vw, 52px);
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+.team-score {
+  font-size: clamp(55px, 8vw, 125px);
+  line-height: 1;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.vs {
+  font-size: clamp(25px, 4vw, 62px);
+  font-weight: 900;
+  color: #f4d38a;
+}
+.footer {
+  margin-top: 30px;
+  font-size: clamp(16px, 2vw, 27px);
+  letter-spacing: .08em;
+  color: #dce1e9;
+}
+.hosted {
+  margin-top: 28px;
+  font-size: clamp(13px, 1.6vw, 22px);
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.pulse {
+  width: 90px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--host);
+  margin: 35px auto;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  50% { opacity: .35; transform: scaleX(.65); }
+}
+
+/* Test controls are not displayed in Streamlabs URLs */
+#testPanel {
+  position: fixed;
+  z-index: 10;
+  top: 15px;
+  left: 15px;
+  width: min(320px, calc(100vw - 30px));
+  padding: 15px;
+  border-radius: 12px;
+  background: #1b2330;
+  border: 1px solid #45536b;
+  box-shadow: 0 10px 35px #0008;
+  font-size: 14px;
+}
+#testPanel[hidden] { display: none; }
+#testPanel h3 { margin: 0 0 10px; }
+.test-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+.test-buttons button {
+  padding: 11px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: #344563;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+.test-buttons button:active { background: #607aa3; }
+#testStatus { color: #aeb8c8; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="screen">
+  <div class="content" id="content">
+    <img id="hostLogo" class="host-logo" alt="Host logo">
+    <div id="tournament" class="eyebrow"></div>
+    <div id="dynamic"></div>
+    <div id="hosted" class="hosted"></div>
+  </div>
+</div>
+
+<div id="testPanel" hidden>
+  <h3>🏀 Graphics Preview</h3>
+  <div class="test-buttons">
+    <button onclick="preview('intermission')">Intermission</button>
+    <button onclick="preview('upnext')">Up Next</button>
+    <button onclick="preview('halftime')">Halftime</button>
+    <button onclick="preview('hidden')">Hide</button>
+  </div>
+  <p id="testStatus">Preview mode</p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const previewMode = params.get("preview") === "1";
+
+const graphicsDefaults = {
+  screen: "hidden",
+  tournamentName: "LA HotWheels Basketball Tournament",
+  hostName: "LA HotWheels",
+  hostColor: "#e53935",
+  hostLogo: "",
+  nextHome: "TEAM 1",
+  nextAway: "TEAM 2",
+  nextHomeColor: "#c62828",
+  nextAwayColor: "#174ea6",
+  nextHomeLogo: "",
+  nextAwayLogo: "",
+  nextTime: "COMING UP NEXT"
+};
+
+const scoreDefaults = {
+  homeName: "HOME",
+  awayName: "AWAY",
+  homeScore: 0,
+  awayScore: 0,
+  homeColor: "#c62828",
+  awayColor: "#174ea6",
+  homeLogo: "",
+  awayLogo: "",
+  quarter: "Q1"
+};
+
+let graphics = { ...graphicsDefaults };
+let score = { ...scoreDefaults };
+
+function validColor(value, fallback) {
+  return /^#[0-9a-f]{6}$/i.test(value || "")
+    ? value
+    : fallback;
+}
+
+function textNode(tag, className, value) {
+  const node = document.createElement(tag);
+  node.className = className;
+  node.textContent = String(value ?? "");
+  return node;
+}
+
+function logoNode(url, className) {
+  const img = document.createElement("img");
+  img.className = className;
+
+  if (/^https:\/\//i.test(url || "")) {
+    img.src = url;
+    img.onerror = () => img.style.display = "none";
+  } else {
+    img.style.display = "none";
+  }
+
+  return img;
+}
+
+function teamNode(name, color, logo, points) {
+  const panel = document.createElement("div");
+  panel.className = "team";
+  panel.style.setProperty(
+    "--team",
+    validColor(color, "#555555")
+  );
+
+  panel.append(
+    logoNode(logo, "team-logo"),
+    textNode("div", "team-name", name)
+  );
+
+  if (points !== undefined) {
+    panel.append(
+      textNode("div", "team-score", points)
+    );
+  }
+
+  return panel;
+}
+
+function render() {
+  const mode = graphics.screen;
+  const screen = $("screen");
+
+  screen.classList.toggle("visible", mode !== "hidden");
+
+  if (mode === "hidden") return;
+
+  screen.style.setProperty(
+    "--host",
+    validColor(graphics.hostColor, "#e53935")
+  );
+
+  $("tournament").textContent =
+    graphics.tournamentName || graphicsDefaults.tournamentName;
+
+  $("hosted").textContent =
+    "HOSTED BY " +
+    (graphics.hostName || "LA HotWheels").toUpperCase();
+
+  const host = $("hostLogo");
+
+  if (/^https:\/\//i.test(graphics.hostLogo || "")) {
+    host.src = graphics.hostLogo;
+    host.style.display = "block";
+    host.onerror = () => host.style.display = "none";
+  } else {
+    host.removeAttribute("src");
+    host.style.display = "none";
+  }
+
+  const dynamic = $("dynamic");
+  dynamic.replaceChildren();
+
+  if (mode === "intermission") {
+    dynamic.append(
+      textNode("div", "headline", "WE'LL BE RIGHT BACK"),
+      textNode(
+        "div",
+        "subtitle",
+        "Tournament coverage resumes shortly"
+      )
+    );
+
+    const pulse = document.createElement("div");
+    pulse.className = "pulse";
+    dynamic.append(pulse);
+    return;
+  }
+
+  const halftime = mode === "halftime";
+
+  dynamic.append(
+    textNode(
+      "div",
+      "headline",
+      halftime ? "HALFTIME" : "UP NEXT"
+    )
+  );
+
+  const matchup = document.createElement("div");
+  matchup.className = "matchup";
+
+  matchup.append(
+    teamNode(
+      halftime ? score.homeName : graphics.nextHome,
+      halftime ? score.homeColor : graphics.nextHomeColor,
+      halftime ? score.homeLogo : graphics.nextHomeLogo,
+      halftime ? score.homeScore : undefined
+    ),
+    textNode("div", "vs", halftime ? "–" : "VS"),
+    teamNode(
+      halftime ? score.awayName : graphics.nextAway,
+      halftime ? score.awayColor : graphics.nextAwayColor,
+      halftime ? score.awayLogo : graphics.nextAwayLogo,
+      halftime ? score.awayScore : undefined
+    )
+  );
+
+  dynamic.append(
+    matchup,
+    textNode(
+      "div",
+      "footer",
+      halftime
+        ? "SECOND HALF COMING UP"
+        : (graphics.nextTime || "COMING UP NEXT")
+    )
+  );
+}
+
+function preview(screen) {
+  if (!previewMode) return;
+
+  graphics.screen = screen;
+  render();
+
+  $("testStatus").textContent =
+    "Showing: " + screen;
+}
+
+if (previewMode) {
+  $("testPanel").hidden = false;
+  graphics.screen = "intermission";
+}
+
+render();
+
+const url = params.get("url");
+const key = params.get("key");
+const room = params.get("room") || "hotwheels-basketball";
+
+if (url && key && window.supabase) {
+  const client = window.supabase.createClient(url, key);
+
+  const channel = client.channel("score-room-" + room, {
+    config: { broadcast: { self: false } }
+  });
+
+  channel
+    .on("broadcast", { event: "state" }, ({ payload }) => {
+      if (payload && typeof payload === "object") {
+        score = { ...score, ...payload };
+        render();
+      }
+    })
+    .on("broadcast", { event: "graphics-state" }, ({ payload }) => {
+      if (payload && typeof payload === "object") {
+        graphics = { ...graphics, ...payload };
+
+        // Preview mode remains under local test controls.
+        if (previewMode) {
+          graphics.screen = "intermission";
+        }
+
+        render();
+      }
+    })
+    .subscribe(status => {
+      if (status === "SUBSCRIBED") {
+        channel.send({
+          type: "broadcast",
+          event: "request",
+          payload: { room }
+        });
+      }
+    });
+}
+</script>
+</body>
+</html>
