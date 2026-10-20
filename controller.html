@@ -22,7 +22,13 @@ main { max-width: 680px; margin: auto; }
 
 h1 { margin: 4px 0 6px; font-size: 25px; }
 h2 { font-size: 19px; }
-p { color: #aeb8c8; font-size: 14px; line-height: 1.5; }
+h3 { font-size: 16px; }
+
+p {
+  color: #aeb8c8;
+  font-size: 14px;
+  line-height: 1.5;
+}
 
 .card {
   background: #1b2330;
@@ -67,7 +73,7 @@ p { color: #aeb8c8; font-size: 14px; line-height: 1.5; }
   border-radius: 8px;
 }
 
-button, input, select {
+button, input {
   font: inherit;
   border-radius: 8px;
   border: 1px solid #445168;
@@ -87,8 +93,12 @@ button:disabled { opacity: .55; cursor: wait; }
 .minus { background: #522d38; }
 .plus { background: #235641; }
 .primary { background: #2456a6; }
+.danger { background: #763342; }
 
-.wide { width: 100%; margin-top: 9px; }
+.wide {
+  width: 100%;
+  margin-top: 9px;
+}
 
 .score-buttons {
   display: grid;
@@ -102,6 +112,21 @@ button:disabled { opacity: .55; cursor: wait; }
   gap: 6px;
 }
 
+.graphics-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.graphics-buttons button {
+  min-height: 60px;
+}
+
+.graphics-buttons button.active {
+  outline: 3px solid #f3c86d;
+  outline-offset: 1px;
+}
+
 label {
   display: block;
   font-size: 13px;
@@ -109,7 +134,7 @@ label {
   margin: 12px 0 5px;
 }
 
-input, select {
+input {
   width: 100%;
   padding: 11px;
   background: #0e131c;
@@ -140,7 +165,34 @@ input[type="file"] {
 
 .good { color: #65d69a; }
 .bad { color: #ff8585; }
-small { color: #aeb8c8; line-height: 1.5; }
+
+small {
+  color: #aeb8c8;
+  line-height: 1.5;
+}
+
+details > summary {
+  cursor: pointer;
+  font-size: 19px;
+  font-weight: 800;
+  padding: 5px 0;
+}
+
+details > summary::marker {
+  color: #f3c86d;
+}
+
+.graphics-section {
+  margin-top: 18px;
+  border-top: 1px solid #303b4d;
+  padding-top: 12px;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid #303b4d;
+  margin: 22px 0;
+}
 
 @media (max-width: 420px) {
   body { padding: 9px; }
@@ -156,37 +208,50 @@ small { color: #aeb8c8; line-height: 1.5; }
 <body>
 <main>
   <h1>🏀 HotWheels Basketball</h1>
-  <p>Scoreboard remote control</p>
-  <p id="status" class="status">Not connected — enter your Supabase details below.</p>
+  <p>Scoreboard and broadcast remote control</p>
+  <p id="status" class="status">
+    Not connected — enter your Supabase details below.
+  </p>
 
+  <!-- LIVE SCOREBOARD CONTROLS -->
   <section class="card">
     <div class="teams">
       <div class="team" id="homePanel" style="background:#c62828">
-        <img id="homePreview" class="logo-preview" alt="Home team logo preview">
+        <img id="homePreview" class="logo-preview" alt="Home team logo">
         <h2 id="homeTitle">HOME</h2>
         <div class="score" id="homeScore">0</div>
+
         <div class="score-buttons">
           <button class="minus" onclick="changeScore('home',-1)">−1</button>
           <button class="plus" onclick="changeScore('home',1)">+1</button>
           <button class="plus" onclick="changeScore('home',2)">+2</button>
         </div>
-        <button class="plus wide" onclick="changeScore('home',3)">+3 POINTS</button>
+
+        <button class="plus wide" onclick="changeScore('home',3)">
+          +3 POINTS
+        </button>
       </div>
 
       <div class="team" id="awayPanel" style="background:#174ea6">
-        <img id="awayPreview" class="logo-preview" alt="Away team logo preview">
+        <img id="awayPreview" class="logo-preview" alt="Away team logo">
         <h2 id="awayTitle">AWAY</h2>
         <div class="score" id="awayScore">0</div>
+
         <div class="score-buttons">
           <button class="minus" onclick="changeScore('away',-1)">−1</button>
           <button class="plus" onclick="changeScore('away',1)">+1</button>
           <button class="plus" onclick="changeScore('away',2)">+2</button>
         </div>
-        <button class="plus wide" onclick="changeScore('away',3)">+3 POINTS</button>
+
+        <button class="plus wide" onclick="changeScore('away',3)">
+          +3 POINTS
+        </button>
       </div>
     </div>
 
-    <button class="wide" onclick="setScoreManually()">Set scores manually</button>
+    <button class="wide" onclick="setScoreManually()">
+      Set scores manually
+    </button>
 
     <label>Quarter / period</label>
     <div class="quarter-buttons">
@@ -200,6 +265,124 @@ small { color: #aeb8c8; line-height: 1.5; }
     <button class="wide" onclick="resetScores()">Reset scores</button>
   </section>
 
+  <!-- NEW BROADCAST GRAPHICS -->
+  <section class="card">
+    <details id="graphicsDetails">
+      <summary>📺 Broadcast Graphics</summary>
+
+      <p>
+        Control full-screen graphics in Streamlabs.
+        These controls do not change your regular scoreboard.
+      </p>
+
+      <div class="graphics-buttons">
+        <button id="btn-intermission"
+          onclick="showGraphic('intermission')">
+          ⏸ Intermission
+        </button>
+
+        <button id="btn-upnext"
+          onclick="showGraphic('upnext')">
+          🏀 Up Next
+        </button>
+
+        <button id="btn-halftime"
+          onclick="showGraphic('halftime')">
+          ⏱ Halftime
+        </button>
+
+        <button id="btn-hidden" class="danger"
+          onclick="showGraphic('hidden')">
+          ✕ Hide Graphics
+        </button>
+      </div>
+
+      <p id="graphicsStatus" class="status">
+        Graphics hidden
+      </p>
+
+      <div class="graphics-section">
+        <h3>LA HotWheels Branding</h3>
+
+        <label for="tournamentNameInput">Tournament name</label>
+        <input id="tournamentNameInput"
+          placeholder="LA HotWheels Basketball Tournament">
+
+        <label for="hostNameInput">Host / organization</label>
+        <input id="hostNameInput" placeholder="LA HotWheels">
+
+        <label for="hostColorInput">Host accent color</label>
+        <input id="hostColorInput" type="color" value="#e53935">
+
+        <label for="hostLogoInput">Host logo URL</label>
+        <input id="hostLogoInput"
+          placeholder="https://example.com/hotwheels-logo.png">
+
+        <button class="wide primary" onclick="applyGraphicsSettings()">
+          Save Branding
+        </button>
+      </div>
+
+      <div class="graphics-section">
+        <h3>Up Next — Upcoming Game</h3>
+
+        <p>
+          These teams are separate from the live game.
+          Editing them will not change the current scoreboard.
+        </p>
+
+        <div class="form-grid">
+          <div>
+            <label for="nextHomeInput">Next home team</label>
+            <input id="nextHomeInput" maxlength="40">
+          </div>
+          <div>
+            <label for="nextAwayInput">Next away team</label>
+            <input id="nextAwayInput" maxlength="40">
+          </div>
+          <div>
+            <label for="nextHomeColorInput">Next home color</label>
+            <input id="nextHomeColorInput" type="color">
+          </div>
+          <div>
+            <label for="nextAwayColorInput">Next away color</label>
+            <input id="nextAwayColorInput" type="color">
+          </div>
+        </div>
+
+        <label for="nextHomeLogoInput">Next home logo URL</label>
+        <input id="nextHomeLogoInput"
+          placeholder="https://example.com/home-logo.png">
+
+        <label for="nextAwayLogoInput">Next away logo URL</label>
+        <input id="nextAwayLogoInput"
+          placeholder="https://example.com/away-logo.png">
+
+        <label for="nextTimeInput">Next game time / message</label>
+        <input id="nextTimeInput"
+          placeholder="NEXT GAME — 2:30 PM">
+
+        <button class="wide primary" onclick="applyGraphicsSettings()">
+          Save Up Next Teams
+        </button>
+      </div>
+
+      <div class="graphics-section">
+        <h3>Streamlabs Graphics Source</h3>
+
+        <p>
+          Add the graphics as a separate Browser Source above
+          your camera and regular scoreboard.
+        </p>
+
+        <button class="wide primary" onclick="copyGraphicsUrl()">
+          Copy Graphics URL
+        </button>
+      </div>
+    </details>
+  </section>
+
+  <!-- TEAM CUSTOMIZATION -->
   <section class="card">
     <h2>Customize teams</h2>
 
@@ -222,58 +405,99 @@ small { color: #aeb8c8; line-height: 1.5; }
       </div>
     </div>
 
-    <button class="wide primary" onclick="applyCustomization()">Apply team names and colors</button>
+    <button class="wide primary" onclick="applyCustomization()">
+      Apply team names and colors
+    </button>
   </section>
 
+  <!-- TEAM LOGOS -->
   <section class="card">
     <h2>Team logos</h2>
-    <p>Choose a logo image from your phone or computer. PNG with a transparent background usually looks best.</p>
+
+    <p>
+      Upload team logos from your phone or computer.
+      PNG images with transparent backgrounds work best.
+    </p>
 
     <h3>Home team logo</h3>
-    <img id="homeUploadPreview" class="logo-preview" alt="Selected home logo">
-    <label for="homeLogoFile">Choose home logo image</label>
-    <input id="homeLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
-    <button id="homeUploadButton" class="wide primary" onclick="uploadLogo('home')">Upload Home Logo</button>
-    <button class="wide" onclick="clearLogo('home')">Remove Home Logo</button>
+    <img id="homeUploadPreview" class="logo-preview"
+      alt="Selected home logo">
 
-    <hr style="border-color:#303b4d;margin:22px 0">
+    <label for="homeLogoFile">Choose home logo image</label>
+    <input id="homeLogoFile" type="file"
+      accept="image/png,image/jpeg,image/webp,image/gif">
+
+    <button id="homeUploadButton" class="wide primary"
+      onclick="uploadLogo('home')">
+      Upload Home Logo
+    </button>
+
+    <button class="wide" onclick="clearLogo('home')">
+      Remove Home Logo
+    </button>
+
+    <hr>
 
     <h3>Away team logo</h3>
-    <img id="awayUploadPreview" class="logo-preview" alt="Selected away logo">
-    <label for="awayLogoFile">Choose away logo image</label>
-    <input id="awayLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
-    <button id="awayUploadButton" class="wide primary" onclick="uploadLogo('away')">Upload Away Logo</button>
-    <button class="wide" onclick="clearLogo('away')">Remove Away Logo</button>
+    <img id="awayUploadPreview" class="logo-preview"
+      alt="Selected away logo">
 
-    <p id="logoStatus" class="status" role="status">Choose an image to begin.</p>
+    <label for="awayLogoFile">Choose away logo image</label>
+    <input id="awayLogoFile" type="file"
+      accept="image/png,image/jpeg,image/webp,image/gif">
+
+    <button id="awayUploadButton" class="wide primary"
+      onclick="uploadLogo('away')">
+      Upload Away Logo
+    </button>
+
+    <button class="wide" onclick="clearLogo('away')">
+      Remove Away Logo
+    </button>
+
+    <p id="logoStatus" class="status">
+      Choose an image to begin.
+    </p>
 
     <label for="homeLogoInput">Home logo URL (optional)</label>
-    <input id="homeLogoInput" placeholder="https://example.com/home-logo.png">
+    <input id="homeLogoInput"
+      placeholder="https://example.com/home-logo.png">
 
     <label for="awayLogoInput">Away logo URL (optional)</label>
-    <input id="awayLogoInput" placeholder="https://example.com/away-logo.png">
+    <input id="awayLogoInput"
+      placeholder="https://example.com/away-logo.png">
 
-    <button class="wide" onclick="applyLogoUrls()">Apply logo URLs</button>
+    <button class="wide" onclick="applyLogoUrls()">
+      Apply logo URLs
+    </button>
   </section>
 
+  <!-- SUPABASE CONNECTION -->
   <section class="card">
     <h2>Connect to your scoreboard</h2>
-    <p>Enter your Supabase project details. The controller and Streamlabs overlay must use the same project and room.</p>
 
     <label for="urlInput">Supabase project URL</label>
-    <input id="urlInput" placeholder="https://your-project.supabase.co" autocomplete="url">
+    <input id="urlInput"
+      placeholder="https://your-project.supabase.co">
 
     <label for="keyInput">Supabase public anon / publishable key</label>
-    <input id="keyInput" placeholder="Paste your public key" autocomplete="off">
+    <input id="keyInput" autocomplete="off"
+      placeholder="Paste your public key">
 
     <label for="roomInput">Room name</label>
-    <input id="roomInput" value="hotwheels-basketball">
+    <input id="roomInput" value="basketball1">
 
-    <button class="wide primary" onclick="connect()">Connect / reconnect</button>
-    <button class="wide" onclick="copyOverlayUrl()">Copy Streamlabs overlay URL</button>
+    <button class="wide primary" onclick="connect()">
+      Connect / reconnect
+    </button>
+
+    <button class="wide" onclick="copyOverlayUrl()">
+      Copy Streamlabs scoreboard URL
+    </button>
 
     <small>
-      Use only your public anon/publishable key here. Never paste a Supabase service-role key into a browser page.
+      Use only a public Supabase key here.
+      Never use a service-role key in browser code.
     </small>
   </section>
 </main>
@@ -293,7 +517,24 @@ const defaults = {
   awayLogo: ""
 };
 
+const graphicsDefaults = {
+  screen: "hidden",
+  tournamentName: "LA HotWheels Basketball Tournament",
+  hostName: "LA HotWheels",
+  hostColor: "#e53935",
+  hostLogo: "",
+  nextHome: "TEAM 1",
+  nextAway: "TEAM 2",
+  nextHomeColor: "#c62828",
+  nextAwayColor: "#174ea6",
+  nextHomeLogo: "",
+  nextAwayLogo: "",
+  nextTime: "COMING UP NEXT"
+};
+
 let state = { ...defaults };
+let graphicsState = { ...graphicsDefaults };
+
 let client = null;
 let channel = null;
 let connected = false;
@@ -306,6 +547,30 @@ function setStatus(message, className = "") {
 function setLogoStatus(message, className = "") {
   $("logoStatus").textContent = message;
   $("logoStatus").className = "status " + className;
+}
+
+function setGraphicsStatus(message, className = "") {
+  $("graphicsStatus").textContent = message;
+  $("graphicsStatus").className = "status " + className;
+}
+
+function updateLogoPreview(team) {
+  const url = state[team + "Logo"];
+  const preview = $(team + "Preview");
+  const uploadPreview = $(team + "UploadPreview");
+
+  [preview, uploadPreview].forEach(img => {
+    if (url) {
+      img.src = url;
+      img.style.display = "block";
+      img.onerror = () => {
+        img.style.display = "none";
+      };
+    } else {
+      img.removeAttribute("src");
+      img.style.display = "none";
+    }
+  });
 }
 
 function updateDisplay() {
@@ -321,28 +586,25 @@ function updateDisplay() {
   updateLogoPreview("away");
 }
 
-function updateLogoPreview(team) {
-  const url = state[team + "Logo"];
-  const preview = $(team + "Preview");
-  const uploadPreview = $(team + "UploadPreview");
-
-  [preview, uploadPreview].forEach(img => {
-    if (url) {
-      img.src = url;
-      img.style.display = "block";
-      img.onerror = () => { img.style.display = "none"; };
-    } else {
-      img.removeAttribute("src");
-      img.style.display = "none";
-    }
-  });
-}
-
 function saveState() {
   try {
-    localStorage.setItem("hwBasketballState", JSON.stringify(state));
+    localStorage.setItem(
+      "hwBasketballState",
+      JSON.stringify(state)
+    );
   } catch (error) {
-    console.warn("Could not save controller state locally.", error);
+    console.warn("Unable to save scoreboard state.", error);
+  }
+}
+
+function saveGraphicsState() {
+  try {
+    localStorage.setItem(
+      "hwBasketballGraphics",
+      JSON.stringify(graphicsState)
+    );
+  } catch (error) {
+    console.warn("Unable to save graphics state.", error);
   }
 }
 
@@ -359,9 +621,27 @@ function sendState() {
   }
 }
 
+function sendGraphicsState() {
+  saveGraphicsState();
+  updateGraphicsButtons();
+
+  if (connected && channel) {
+    channel.send({
+      type: "broadcast",
+      event: "graphics-state",
+      payload: graphicsState
+    });
+  }
+}
+
 function changeScore(team, amount) {
   const key = team + "Score";
-  state[key] = Math.max(0, Number(state[key]) + amount);
+
+  state[key] = Math.max(
+    0,
+    Number(state[key]) + amount
+  );
+
   sendState();
 }
 
@@ -372,36 +652,57 @@ function setQuarter(quarter) {
 
 function resetScores() {
   if (!confirm("Reset both scores to zero?")) return;
+
   state.homeScore = 0;
   state.awayScore = 0;
+
   sendState();
 }
 
 function setScoreManually() {
-  const home = prompt("Enter home team score:", state.homeScore);
+  const home = prompt(
+    "Enter home team score:",
+    state.homeScore
+  );
+
   if (home === null) return;
 
-  const away = prompt("Enter away team score:", state.awayScore);
+  const away = prompt(
+    "Enter away team score:",
+    state.awayScore
+  );
+
   if (away === null) return;
 
   const h = Number(home);
   const a = Number(away);
 
-  if (!Number.isInteger(h) || !Number.isInteger(a) || h < 0 || a < 0) {
+  if (
+    !Number.isInteger(h) ||
+    !Number.isInteger(a) ||
+    h < 0 ||
+    a < 0
+  ) {
     alert("Enter whole-number scores of zero or greater.");
     return;
   }
 
   state.homeScore = h;
   state.awayScore = a;
+
   sendState();
 }
 
 function applyCustomization() {
-  state.homeName = $("homeNameInput").value.trim() || "HOME";
-  state.awayName = $("awayNameInput").value.trim() || "AWAY";
+  state.homeName =
+    $("homeNameInput").value.trim() || "HOME";
+
+  state.awayName =
+    $("awayNameInput").value.trim() || "AWAY";
+
   state.homeColor = $("homeColorInput").value;
   state.awayColor = $("awayColorInput").value;
+
   sendState();
 }
 
@@ -409,25 +710,31 @@ function applyLogoUrls() {
   state.homeLogo = $("homeLogoInput").value.trim();
   state.awayLogo = $("awayLogoInput").value.trim();
 
-  updateDisplay();
   sendState();
   setLogoStatus("Logo URLs applied.", "good");
 }
 
 function clearLogo(team) {
-  if (!confirm("Remove the " + team + " team logo?")) return;
+  if (!confirm("Remove the " + team + " team logo?")) {
+    return;
+  }
 
   state[team + "Logo"] = "";
+
   $(team + "LogoInput").value = "";
   $(team + "LogoFile").value = "";
 
-  updateDisplay();
   sendState();
-  setLogoStatus(team.toUpperCase() + " logo removed.", "good");
+
+  setLogoStatus(
+    team.toUpperCase() + " logo removed.",
+    "good"
+  );
 }
 
 function previewSelectedFile(team) {
   const file = $(team + "LogoFile").files[0];
+
   if (!file) return;
 
   if (!file.type.startsWith("image/")) {
@@ -444,14 +751,25 @@ function previewSelectedFile(team) {
 
   const localUrl = URL.createObjectURL(file);
   const preview = $(team + "UploadPreview");
+
   preview.src = localUrl;
   preview.style.display = "block";
 
-  setLogoStatus("Image selected. Press Upload " + team + " Logo to publish it.");
+  setLogoStatus(
+    "Image selected. Press Upload " +
+    team + " Logo to publish it."
+  );
 }
 
-$("homeLogoFile").addEventListener("change", () => previewSelectedFile("home"));
-$("awayLogoFile").addEventListener("change", () => previewSelectedFile("away"));
+$("homeLogoFile").addEventListener(
+  "change",
+  () => previewSelectedFile("home")
+);
+
+$("awayLogoFile").addEventListener(
+  "change",
+  () => previewSelectedFile("away")
+);
 
 async function uploadLogo(team) {
   const file = $(team + "LogoFile").files[0];
@@ -478,6 +796,7 @@ async function uploadLogo(team) {
 
   const button = $(team + "UploadButton");
   button.disabled = true;
+
   setLogoStatus("Uploading image…");
 
   try {
@@ -489,10 +808,15 @@ async function uploadLogo(team) {
     };
 
     const extension = extByType[file.type];
-    if (!extension) throw new Error("Unsupported image format.");
+
+    if (!extension) {
+      throw new Error("Unsupported image format.");
+    }
 
     const filePath =
-      team + "/" + crypto.randomUUID() + "." + extension;
+      team + "/" +
+      crypto.randomUUID() +
+      "." + extension;
 
     const { error } = await client.storage
       .from("team-logos")
@@ -509,24 +833,28 @@ async function uploadLogo(team) {
       .getPublicUrl(filePath);
 
     if (!data || !data.publicUrl) {
-      throw new Error("Could not get the public image URL.");
+      throw new Error(
+        "Could not get the public image URL."
+      );
     }
 
     state[team + "Logo"] = data.publicUrl;
     $(team + "LogoInput").value = data.publicUrl;
 
-    updateDisplay();
     sendState();
 
     setLogoStatus(
-      team.toUpperCase() + " logo uploaded and sent to the scoreboard.",
+      team.toUpperCase() +
+      " logo uploaded and sent to the scoreboard.",
       "good"
     );
   } catch (error) {
     console.error(error);
+
     setLogoStatus(
       "Upload failed: " +
-      (error.message || "Check your Storage bucket and upload permissions."),
+      (error.message ||
+      "Check your Storage bucket permissions."),
       "bad"
     );
   } finally {
@@ -534,23 +862,190 @@ async function uploadLogo(team) {
   }
 }
 
+/* BROADCAST GRAPHICS */
+
+function updateGraphicsButtons() {
+  const modes = [
+    "intermission",
+    "upnext",
+    "halftime",
+    "hidden"
+  ];
+
+  modes.forEach(mode => {
+    const button = $("btn-" + mode);
+
+    if (button) {
+      button.classList.toggle(
+        "active",
+        graphicsState.screen === mode
+      );
+    }
+  });
+}
+
+function showGraphic(screen) {
+  const allowed = [
+    "intermission",
+    "upnext",
+    "halftime",
+    "hidden"
+  ];
+
+  if (!allowed.includes(screen)) return;
+
+  if (!connected) {
+    setGraphicsStatus(
+      "Connect to Supabase before switching graphics.",
+      "bad"
+    );
+    return;
+  }
+
+  // Save any edited settings before showing the screen.
+  readGraphicsInputs();
+
+  graphicsState.screen = screen;
+
+  sendGraphicsState();
+
+  setGraphicsStatus(
+    screen === "hidden"
+      ? "Graphics hidden"
+      : "Showing: " + screen.toUpperCase(),
+    "good"
+  );
+}
+
+function readGraphicsInputs() {
+  graphicsState.tournamentName =
+    $("tournamentNameInput").value.trim() ||
+    graphicsDefaults.tournamentName;
+
+  graphicsState.hostName =
+    $("hostNameInput").value.trim() ||
+    graphicsDefaults.hostName;
+
+  graphicsState.hostColor =
+    $("hostColorInput").value;
+
+  graphicsState.hostLogo =
+    $("hostLogoInput").value.trim();
+
+  graphicsState.nextHome =
+    $("nextHomeInput").value.trim() || "TEAM 1";
+
+  graphicsState.nextAway =
+    $("nextAwayInput").value.trim() || "TEAM 2";
+
+  graphicsState.nextHomeColor =
+    $("nextHomeColorInput").value;
+
+  graphicsState.nextAwayColor =
+    $("nextAwayColorInput").value;
+
+  graphicsState.nextHomeLogo =
+    $("nextHomeLogoInput").value.trim();
+
+  graphicsState.nextAwayLogo =
+    $("nextAwayLogoInput").value.trim();
+
+  graphicsState.nextTime =
+    $("nextTimeInput").value.trim() ||
+    "COMING UP NEXT";
+}
+
+function applyGraphicsSettings() {
+  readGraphicsInputs();
+  sendGraphicsState();
+
+  setGraphicsStatus(
+    connected
+      ? "Graphics settings saved and sent."
+      : "Graphics settings saved locally. Connect to send.",
+    connected ? "good" : ""
+  );
+}
+
+function loadGraphicsState() {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem("hwBasketballGraphics")
+    );
+
+    if (saved) {
+      graphicsState = {
+        ...graphicsDefaults,
+        ...saved
+      };
+    }
+  } catch (error) {}
+
+  $("tournamentNameInput").value =
+    graphicsState.tournamentName;
+
+  $("hostNameInput").value =
+    graphicsState.hostName;
+
+  $("hostColorInput").value =
+    graphicsState.hostColor;
+
+  $("hostLogoInput").value =
+    graphicsState.hostLogo;
+
+  $("nextHomeInput").value =
+    graphicsState.nextHome;
+
+  $("nextAwayInput").value =
+    graphicsState.nextAway;
+
+  $("nextHomeColorInput").value =
+    graphicsState.nextHomeColor;
+
+  $("nextAwayColorInput").value =
+    graphicsState.nextAwayColor;
+
+  $("nextHomeLogoInput").value =
+    graphicsState.nextHomeLogo;
+
+  $("nextAwayLogoInput").value =
+    graphicsState.nextAwayLogo;
+
+  $("nextTimeInput").value =
+    graphicsState.nextTime;
+
+  updateGraphicsButtons();
+}
+
+/* SUPABASE CONNECTION */
+
 async function connect() {
   const url = $("urlInput").value.trim();
   const key = $("keyInput").value.trim();
-  const room = $("roomInput").value.trim() || "hotwheels-basketball";
+
+  const room =
+    $("roomInput").value.trim() || "basketball1";
 
   if (!url || !key) {
-    setStatus("Enter the Supabase URL and public key.", "bad");
+    setStatus(
+      "Enter the Supabase URL and public key.",
+      "bad"
+    );
     return;
   }
 
   if (!window.supabase) {
-    setStatus("Supabase library did not load. Check your internet connection.", "bad");
+    setStatus(
+      "Supabase library did not load.",
+      "bad"
+    );
     return;
   }
 
   if (channel && client) {
-    try { await client.removeChannel(channel); } catch (error) {}
+    try {
+      await client.removeChannel(channel);
+    } catch (error) {}
   }
 
   connected = false;
@@ -559,80 +1054,153 @@ async function connect() {
   try {
     client = window.supabase.createClient(url, key);
 
-    channel = client.channel("score-room-" + room, {
-      config: { broadcast: { self: false } }
-    });
+    channel = client.channel(
+      "score-room-" + room,
+      {
+        config: {
+          broadcast: { self: false }
+        }
+      }
+    );
 
     channel
-      .on("broadcast", { event: "request" }, () => {
-        channel.send({
-          type: "broadcast",
-          event: "state",
-          payload: state
-        });
-      })
+      .on(
+        "broadcast",
+        { event: "request" },
+        () => {
+          channel.send({
+            type: "broadcast",
+            event: "state",
+            payload: state
+          });
+
+          channel.send({
+            type: "broadcast",
+            event: "graphics-state",
+            payload: graphicsState
+          });
+        }
+      )
       .subscribe(status => {
         if (status === "SUBSCRIBED") {
           connected = true;
 
-          localStorage.setItem("hwBasketballUrl", url);
-          localStorage.setItem("hwBasketballKey", key);
-          localStorage.setItem("hwBasketballRoom", room);
+          localStorage.setItem(
+            "hwBasketballUrl",
+            url
+          );
 
-          setStatus("Connected — scoreboard is ready.", "good");
-          sendState();
-        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          connected = false;
+          localStorage.setItem(
+            "hwBasketballKey",
+            key
+          );
+
+          localStorage.setItem(
+            "hwBasketballRoom",
+            room
+          );
+
           setStatus(
-            "Connection failed. Check your URL, public key, and Realtime settings.",
+            "Connected — scoreboard and graphics ready.",
+            "good"
+          );
+
+          sendState();
+          sendGraphicsState();
+        } else if (
+          status === "CHANNEL_ERROR" ||
+          status === "TIMED_OUT"
+        ) {
+          connected = false;
+
+          setStatus(
+            "Connection failed. Check your settings.",
             "bad"
           );
-        } else {
-          setStatus("Connecting…");
         }
       });
   } catch (error) {
     connected = false;
-    setStatus("Could not connect. Check the settings and try again.", "bad");
+
+    setStatus(
+      "Could not connect. Check settings and retry.",
+      "bad"
+    );
+  }
+}
+
+function buildSourceUrl(filename) {
+  const url = $("urlInput").value.trim();
+  const key = $("keyInput").value.trim();
+
+  const room =
+    $("roomInput").value.trim() || "basketball1";
+
+  if (!url || !key) {
+    alert("Enter your Supabase details first.");
+    return null;
+  }
+
+  const result = new URL(filename, location.href);
+
+  result.searchParams.set("url", url);
+  result.searchParams.set("key", key);
+  result.searchParams.set("room", room);
+
+  return result.href;
+}
+
+function copyText(value, successMessage) {
+  if (!value) return;
+
+  if (
+    navigator.clipboard &&
+    navigator.clipboard.writeText
+  ) {
+    navigator.clipboard.writeText(value)
+      .then(() => alert(successMessage))
+      .catch(() => prompt("Copy this URL:", value));
+  } else {
+    prompt("Copy this URL:", value);
   }
 }
 
 function copyOverlayUrl() {
-  const url = $("urlInput").value.trim();
-  const key = $("keyInput").value.trim();
-  const room = $("roomInput").value.trim() || "hotwheels-basketball";
-
-  if (!url || !key) {
-    alert("Enter your Supabase details first.");
-    return;
-  }
-
-  const overlay = new URL("index.html", location.href);
-  overlay.searchParams.set("url", url);
-  overlay.searchParams.set("key", key);
-  overlay.searchParams.set("room", room);
-
-  const copyText = overlay.href;
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(copyText)
-      .then(() => alert("Overlay URL copied. Paste it into your Streamlabs Browser Source."))
-      .catch(() => prompt("Copy your overlay URL:", copyText));
-  } else {
-    prompt("Copy your overlay URL:", copyText);
-  }
+  copyText(
+    buildSourceUrl("index.html"),
+    "Scoreboard URL copied!"
+  );
 }
+
+function copyGraphicsUrl() {
+  copyText(
+    buildSourceUrl("graphics.html"),
+    "Graphics URL copied! Add it to Streamlabs."
+  );
+}
+
+/* INITIALIZATION */
 
 function loadState() {
   try {
-    const saved = JSON.parse(localStorage.getItem("hwBasketballState"));
-    if (saved) state = { ...defaults, ...saved };
+    const saved = JSON.parse(
+      localStorage.getItem("hwBasketballState")
+    );
+
+    if (saved) {
+      state = {
+        ...defaults,
+        ...saved
+      };
+    }
   } catch (error) {}
 
   $("homeNameInput").value = state.homeName;
   $("awayNameInput").value = state.awayName;
+
   $("homeColorInput").value = state.homeColor;
   $("awayColorInput").value = state.awayColor;
+
   $("homeLogoInput").value = state.homeLogo;
   $("awayLogoInput").value = state.awayLogo;
 
@@ -640,11 +1208,16 @@ function loadState() {
 }
 
 loadState();
+loadGraphicsState();
 
-$("urlInput").value = localStorage.getItem("hwBasketballUrl") || "";
-$("keyInput").value = localStorage.getItem("hwBasketballKey") || "";
+$("urlInput").value =
+  localStorage.getItem("hwBasketballUrl") || "";
+
+$("keyInput").value =
+  localStorage.getItem("hwBasketballKey") || "";
+
 $("roomInput").value =
-  localStorage.getItem("hwBasketballRoom") || "hotwheels-basketball";
+  localStorage.getItem("hwBasketballRoom") || "basketball1";
 </script>
 </body>
 </html>
