@@ -3,221 +3,435 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LA HotWheels | Broadcast Graphics</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root {
-  --host: #e53935;
-  --home: #c62828;
-  --away: #174ea6;
+  --orange:#ff5816;
+  --navy:#102d65;
+  --white:#f5f6f9;
+  --home:#b51c28;
+  --away:#174ea6;
 }
-* { box-sizing: border-box; }
-html, body {
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: transparent;
-  color: white;
-  font-family: Arial, Helvetica, sans-serif;
+* { box-sizing:border-box; }
+html,body {
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:transparent;
+  color:white;
+  font-family:Impact,"Arial Narrow",Arial,sans-serif;
 }
-#screen {
-  position: absolute;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
+#stage {
+  position:absolute;
+  inset:0;
+  display:none;
+  overflow:hidden;
+  isolation:isolate;
   background:
-    radial-gradient(ellipse at 50% 10%, #26354c, transparent 65%),
-    linear-gradient(135deg, #0d1420, #080b12);
-  overflow: hidden;
-  isolation: isolate;
+    radial-gradient(ellipse at 50% 70%,#1c2a42 0%,transparent 60%),
+    linear-gradient(180deg,#05070c,#111a29 65%,#06080d);
 }
-#screen.visible { display: flex; }
-#screen::before {
-  content: "";
-  position: absolute;
-  inset: -50%;
-  background: repeating-linear-gradient(
-    115deg,
-    transparent 0 140px,
-    rgba(255,255,255,.035) 142px 145px
+#stage.visible { display:block; }
+
+/* Cinematic arena */
+.arena {
+  position:absolute;
+  inset:0;
+  z-index:-3;
+  overflow:hidden;
+}
+.arena::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse at 12% 4%,#ffffff7a,transparent 9%),
+    radial-gradient(ellipse at 88% 4%,#ffffff7a,transparent 9%),
+    radial-gradient(ellipse at 50% 0%,#ffffff36,transparent 20%),
+    repeating-linear-gradient(
+      0deg,transparent 0 24px,#ffffff06 25px 26px
+    );
+  opacity:.7;
+}
+.arena::after {
+  content:"";
+  position:absolute;
+  left:-20%;
+  right:-20%;
+  bottom:-34%;
+  height:72%;
+  transform:perspective(600px) rotateX(65deg);
+  transform-origin:top center;
+  border-radius:50%;
+  background:
+    repeating-linear-gradient(
+      90deg,transparent 0 65px,#ffffff0c 66px 68px
+    ),
+    repeating-linear-gradient(
+      0deg,transparent 0 75px,#ffffff09 76px 78px
+    ),
+    linear-gradient(180deg,#7b3c17,#29190f 60%,#07090c);
+  box-shadow:0 -10px 90px #ff641b33;
+}
+.city {
+  position:absolute;
+  left:0;
+  right:0;
+  top:10%;
+  height:36%;
+  opacity:.22;
+  background:
+    linear-gradient(90deg,
+      transparent 0 6%,#05070b 6% 9%,
+      transparent 9% 13%,#05070b 13% 17%,
+      transparent 17% 26%,#05070b 26% 29%,
+      transparent 29% 35%,#05070b 35% 39%,
+      transparent 39% 51%,#05070b 51% 55%,
+      transparent 55% 62%,#05070b 62% 66%,
+      transparent 66% 73%,#05070b 73% 78%,
+      transparent 78% 87%,#05070b 87% 91%,
+      transparent 91%);
+}
+.light {
+  position:absolute;
+  top:-12%;
+  width:38%;
+  height:75%;
+  filter:blur(18px);
+  opacity:.25;
+  background:conic-gradient(
+    from 180deg at 50% 0%,
+    transparent 0deg,#e8edff 17deg,transparent 34deg
   );
-  animation: drift 22s linear infinite;
-  z-index: -1;
+  animation:sweep 12s ease-in-out infinite alternate;
 }
-#screen::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 11px;
-  background: var(--host);
-  box-shadow: 0 0 45px var(--host);
+.light.left { left:-10%; }
+.light.right {
+  right:-10%;
+  transform:scaleX(-1);
+  animation-delay:-6s;
 }
-@keyframes drift {
-  to { transform: translateX(240px); }
+@keyframes sweep {
+  from { opacity:.12; }
+  to { opacity:.36; }
 }
-@keyframes appear {
-  from { opacity: 0; transform: translateY(25px); }
-  to { opacity: 1; transform: translateY(0); }
+
+/* Orange and navy broadcast accents */
+.stripe {
+  position:absolute;
+  z-index:-1;
+  width:24vw;
+  height:180vh;
+  top:-35vh;
+  transform:rotate(35deg);
+  border-left:clamp(8px,1.5vw,30px) solid var(--orange);
+  border-right:clamp(12px,2.5vw,45px) solid var(--navy);
+  opacity:.9;
+  filter:drop-shadow(0 0 12px #ff581644);
 }
-.content {
-  width: min(92vw, 1500px);
-  text-align: center;
-  animation: appear .65s ease both;
+.stripe.left { left:-15vw; }
+.stripe.right { right:-15vw; transform:rotate(-35deg); }
+.topline {
+  position:absolute;
+  top:0;
+  width:100%;
+  height:6px;
+  background:linear-gradient(90deg,var(--navy),var(--orange),var(--navy));
 }
-.host-logo {
-  display: none;
-  width: 110px;
-  height: 110px;
-  object-fit: contain;
-  margin: 0 auto 18px;
+.bottomline {
+  position:absolute;
+  bottom:0;
+  width:100%;
+  height:9px;
+  background:var(--orange);
+  box-shadow:0 0 35px var(--orange);
 }
-.eyebrow {
-  font-size: clamp(14px, 2vw, 26px);
-  font-weight: 800;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: #d4dae5;
+.grain {
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.18;
+  background:repeating-linear-gradient(
+    115deg,transparent 0 110px,#ffffff10 111px 113px
+  );
+  animation:move 22s linear infinite;
+}
+@keyframes move {
+  to { transform:translateX(220px); }
+}
+
+/* Overall layout */
+.layout {
+  position:absolute;
+  inset:0;
+  padding:4vh 5vw 6vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.brand {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:clamp(10px,1.5vw,24px);
+  margin-bottom:2vh;
+}
+.brand img {
+  width:clamp(54px,8vw,145px);
+  height:clamp(54px,8vw,145px);
+  object-fit:contain;
+  mix-blend-mode:screen;
+  filter:drop-shadow(0 0 14px #ff581650);
+}
+.brandname {
+  text-align:left;
+  font-family:Arial,sans-serif;
+  font-weight:900;
+  font-size:clamp(13px,2.1vw,34px);
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  text-shadow:0 3px 10px #000;
+}
+.brandname span { color:var(--orange); }
+.tournament {
+  font-family:Arial,sans-serif;
+  font-size:clamp(11px,1.3vw,22px);
+  font-weight:700;
+  letter-spacing:.28em;
+  text-transform:uppercase;
+  color:#d8dfec;
+  margin:1vh 0 3vh;
+  text-shadow:0 3px 10px #000;
 }
 .headline {
-  font-size: clamp(42px, 7.5vw, 125px);
-  line-height: 1.04;
-  font-weight: 900;
-  margin: 28px 0;
-  text-transform: uppercase;
+  font-size:clamp(54px,9vw,160px);
+  font-weight:900;
+  font-style:italic;
+  letter-spacing:-.025em;
+  line-height:.95;
+  text-transform:uppercase;
+  transform:skew(-5deg);
+  text-shadow:
+    0 3px 0 #8893a4,
+    0 8px 0 #2a303a,
+    0 18px 25px #000b;
 }
-.subtitle {
-  font-size: clamp(18px, 2.4vw, 34px);
-  color: #c8d0df;
-}
-.matchup {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(12px, 3vw, 50px);
-  margin: 38px auto;
-}
-.team {
-  width: 41%;
-  min-height: 250px;
-  border-top: 9px solid var(--team);
-  border-radius: 18px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--team) 30%, #111927),
-    #111722
+.orange { color:var(--orange); }
+.silver {
+  background:linear-gradient(
+    180deg,#fff 12%,#d8dce3 48%,#8794a5 95%
   );
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 25px 12px;
-  gap: 12px;
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
 }
-.team-logo {
-  width: clamp(65px, 10vw, 150px);
-  height: clamp(65px, 10vw, 150px);
-  object-fit: contain;
+.subheading {
+  margin-top:3vh;
+  font-size:clamp(17px,2.2vw,38px);
+  letter-spacing:.24em;
+  font-family:Arial,sans-serif;
+  font-weight:900;
+  text-transform:uppercase;
+  text-shadow:0 4px 10px #000;
 }
-.team-name {
-  font-size: clamp(20px, 3.5vw, 52px);
-  font-weight: 900;
-  overflow-wrap: anywhere;
-}
-.team-score {
-  font-size: clamp(55px, 8vw, 125px);
-  line-height: 1;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-}
-.vs {
-  font-size: clamp(25px, 4vw, 62px);
-  font-weight: 900;
-  color: #f4d38a;
-}
-.footer {
-  margin-top: 30px;
-  font-size: clamp(16px, 2vw, 27px);
-  letter-spacing: .08em;
-  color: #dce1e9;
+.accentbar {
+  width:min(65vw,850px);
+  height:7px;
+  margin:4vh auto 0;
+  background:linear-gradient(
+    90deg,transparent,var(--navy),var(--orange),var(--navy),transparent
+  );
+  box-shadow:0 0 18px #ff581688;
 }
 .hosted {
-  margin-top: 28px;
-  font-size: clamp(13px, 1.6vw, 22px);
-  font-weight: 800;
-  letter-spacing: .12em;
-  text-transform: uppercase;
+  font-family:Arial,sans-serif;
+  font-weight:800;
+  letter-spacing:.16em;
+  font-size:clamp(11px,1.4vw,23px);
+  text-transform:uppercase;
+  color:#dce1e9;
+  margin-top:3vh;
 }
-.pulse {
-  width: 90px;
-  height: 5px;
-  border-radius: 99px;
-  background: var(--host);
-  margin: 35px auto;
-  animation: pulse 2s ease-in-out infinite;
+.matchup {
+  width:100%;
+  max-width:1580px;
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  gap:clamp(8px,1.5vw,26px);
+  margin-top:2vh;
 }
-@keyframes pulse {
-  50% { opacity: .35; transform: scaleX(.65); }
+.team {
+  position:relative;
+  width:43%;
+  min-height:clamp(190px,35vh,390px);
+  padding:3vh 2vw;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:1.5vh;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb,var(--team) 75%,#000) 0%,
+      color-mix(in srgb,var(--team) 35%,#070d18) 50%,
+      #080e18 100%);
+  border-top:7px solid var(--team);
+  border-bottom:5px solid #ffffffb0;
+  clip-path:polygon(8% 0,100% 0,92% 100%,0 100%);
+  box-shadow:inset 0 0 50px #0006;
+}
+.team:nth-child(3) {
+  clip-path:polygon(0 0,92% 0,100% 100%,8% 100%);
+}
+.team::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(
+    115deg,transparent 20%,#ffffff22 35%,transparent 48%
+  );
+}
+.team img {
+  width:clamp(60px,11vw,185px);
+  height:clamp(60px,11vw,185px);
+  object-fit:contain;
+  filter:drop-shadow(0 6px 10px #000b);
+}
+.team-name {
+  font-size:clamp(20px,3.5vw,62px);
+  line-height:1.05;
+  font-style:italic;
+  text-transform:uppercase;
+  text-shadow:0 4px 9px #000;
+  overflow-wrap:anywhere;
+}
+.points {
+  font-size:clamp(55px,7vw,130px);
+  line-height:1;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 6px 10px #000b;
+}
+.vs {
+  align-self:center;
+  flex-shrink:0;
+  font-size:clamp(30px,4vw,75px);
+  font-style:italic;
+  color:#f0f1f4;
+  text-shadow:0 0 18px #ff5816aa;
+}
+.info {
+  margin-top:3vh;
+  padding:1.5vh 5vw;
+  border-left:8px solid var(--orange);
+  border-right:8px solid var(--navy);
+  background:linear-gradient(90deg,#101f39,#09101e,#101f39);
+  font-size:clamp(16px,2.4vw,38px);
+  font-family:Arial,sans-serif;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  box-shadow:0 12px 30px #0008;
+}
+#stage.visible .layout {
+  animation:entrance .65s ease-out both;
+}
+@keyframes entrance {
+  from { opacity:0; transform:translateY(35px) scale(.98); }
+  to { opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes shine {
+  0%,100% { filter:brightness(1); }
+  50% { filter:brightness(1.25); }
+}
+#stage.visible .headline {
+  animation:shine 4s ease-in-out infinite;
+}
+#stage.visible .accentbar {
+  animation:shine 2s ease-in-out infinite;
 }
 
-/* Test controls are not displayed in Streamlabs URLs */
+/* Testing panel: only shown with ?preview=1 */
 #testPanel {
-  position: fixed;
-  z-index: 10;
-  top: 15px;
-  left: 15px;
-  width: min(320px, calc(100vw - 30px));
-  padding: 15px;
-  border-radius: 12px;
-  background: #1b2330;
-  border: 1px solid #45536b;
-  box-shadow: 0 10px 35px #0008;
-  font-size: 14px;
+  position:fixed;
+  top:12px;
+  left:12px;
+  z-index:50;
+  background:#172235f5;
+  border:1px solid #71809a;
+  border-radius:12px;
+  padding:13px;
+  width:min(310px,calc(100vw - 24px));
+  font-family:Arial,sans-serif;
 }
-#testPanel[hidden] { display: none; }
-#testPanel h3 { margin: 0 0 10px; }
-.test-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 7px;
+#testPanel[hidden] { display:none; }
+#testPanel strong { display:block; margin-bottom:10px; }
+.testgrid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
 }
-.test-buttons button {
-  padding: 11px 6px;
-  border: 0;
-  border-radius: 7px;
-  background: #344563;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
+.testgrid button {
+  border:0;
+  border-radius:6px;
+  padding:10px 4px;
+  background:#304665;
+  color:white;
+  font-weight:700;
+  cursor:pointer;
 }
-.test-buttons button:active { background: #607aa3; }
-#testStatus { color: #aeb8c8; font-size: 12px; }
+#testPanel small { display:block; margin-top:8px; color:#bfc9d8; }
+
+@media(max-width:600px) {
+  .layout { padding:5vh 3vw; }
+  .brandname { letter-spacing:.05em; }
+  .team { min-height:170px; padding:10px; }
+  .matchup { gap:4px; }
+  .team-name { font-size:clamp(13px,3.5vw,24px); }
+  .team img { width:55px; height:55px; }
+  .vs { font-size:25px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after {
+    animation:none !important;
+    transition:none !important;
+  }
+}
 </style>
 </head>
-<body>
 
-<div id="screen">
-  <div class="content" id="content">
-    <img id="hostLogo" class="host-logo" alt="Host logo">
-    <div id="tournament" class="eyebrow"></div>
-    <div id="dynamic"></div>
-    <div id="hosted" class="hosted"></div>
+<body>
+<div id="stage">
+  <div class="arena">
+    <div class="city"></div>
+    <div class="light left"></div>
+    <div class="light right"></div>
   </div>
+  <div class="stripe left"></div>
+  <div class="stripe right"></div>
+  <div class="grain"></div>
+  <div class="topline"></div>
+  <div class="bottomline"></div>
+  <div id="layout" class="layout"></div>
 </div>
 
 <div id="testPanel" hidden>
-  <h3>🏀 Graphics Preview</h3>
-  <div class="test-buttons">
+  <strong>🏀 LA HotWheels Graphics Preview</strong>
+  <div class="testgrid">
     <button onclick="preview('intermission')">Intermission</button>
     <button onclick="preview('upnext')">Up Next</button>
     <button onclick="preview('halftime')">Halftime</button>
     <button onclick="preview('hidden')">Hide</button>
   </div>
-  <p id="testStatus">Preview mode</p>
+  <small id="testStatus">Preview mode</small>
 </div>
 
 <script>
@@ -226,228 +440,271 @@ const params = new URLSearchParams(location.search);
 const previewMode = params.get("preview") === "1";
 
 const graphicsDefaults = {
-  screen: "hidden",
-  tournamentName: "LA HotWheels Basketball Tournament",
-  hostName: "LA HotWheels",
-  hostColor: "#e53935",
-  hostLogo: "",
-  nextHome: "TEAM 1",
-  nextAway: "TEAM 2",
-  nextHomeColor: "#c62828",
-  nextAwayColor: "#174ea6",
-  nextHomeLogo: "",
-  nextAwayLogo: "",
-  nextTime: "COMING UP NEXT"
+  screen:"hidden",
+  tournamentName:"LA HotWheels Basketball Tournament",
+  hostName:"LA HotWheels",
+  hostColor:"#ff5816",
+  hostLogo:"",
+  nextHome:"THE PACK",
+  nextAway:"HOOPERS",
+  nextHomeColor:"#b51c28",
+  nextAwayColor:"#174ea6",
+  nextHomeLogo:"",
+  nextAwayLogo:"",
+  nextTime:"NEXT GAME — COMING UP"
 };
 
 const scoreDefaults = {
-  homeName: "HOME",
-  awayName: "AWAY",
-  homeScore: 0,
-  awayScore: 0,
-  homeColor: "#c62828",
-  awayColor: "#174ea6",
-  homeLogo: "",
-  awayLogo: "",
-  quarter: "Q1"
+  homeName:"HOME",
+  awayName:"AWAY",
+  homeScore:0,
+  awayScore:0,
+  homeColor:"#b51c28",
+  awayColor:"#174ea6",
+  homeLogo:"",
+  awayLogo:"",
+  quarter:"Q1"
 };
 
-let graphics = { ...graphicsDefaults };
-let score = { ...scoreDefaults };
+let graphics = {...graphicsDefaults};
+let score = {...scoreDefaults};
+let previewScreen = "intermission";
 
-function validColor(value, fallback) {
+function safeColor(value,fallback) {
   return /^#[0-9a-f]{6}$/i.test(value || "")
     ? value
     : fallback;
 }
 
-function textNode(tag, className, value) {
-  const node = document.createElement(tag);
-  node.className = className;
-  node.textContent = String(value ?? "");
-  return node;
+function node(tag,className,value) {
+  const element = document.createElement(tag);
+  element.className = className;
+  if (value !== undefined) {
+    element.textContent = String(value);
+  }
+  return element;
 }
 
-function logoNode(url, className) {
+function imageNode(url,className) {
   const img = document.createElement("img");
   img.className = className;
+  img.alt = "";
 
-  if (/^https:\/\//i.test(url || "")) {
+  if (typeof url === "string" &&
+      (/^https:\/\//i.test(url) ||
+       url === "hotwheels.jpg")) {
     img.src = url;
     img.onerror = () => img.style.display = "none";
   } else {
     img.style.display = "none";
   }
-
   return img;
 }
 
-function teamNode(name, color, logo, points) {
-  const panel = document.createElement("div");
-  panel.className = "team";
+function brand() {
+  const wrap = node("div","brand");
+
+  const logo = imageNode(
+    graphics.hostLogo || "hotwheels.jpg",
+    "brand-logo"
+  );
+
+  const name = node("div","brandname");
+  const title = graphics.hostName || "LA HotWheels";
+
+  name.append(
+    document.createTextNode(title.toUpperCase())
+  );
+
+  wrap.append(logo,name);
+  return wrap;
+}
+
+function tournament() {
+  return node(
+    "div",
+    "tournament",
+    graphics.tournamentName ||
+    "LA HotWheels Basketball Tournament"
+  );
+}
+
+function heading(first,second) {
+  const h = node("div","headline");
+  h.append(
+    node("span","silver",first + " "),
+    node("span","orange",second)
+  );
+  return h;
+}
+
+function teamPanel(name,color,logo,points) {
+  const panel = node("div","team");
+
   panel.style.setProperty(
     "--team",
-    validColor(color, "#555555")
+    safeColor(color,"#334a6c")
   );
 
   panel.append(
-    logoNode(logo, "team-logo"),
-    textNode("div", "team-name", name)
+    imageNode(logo,"team-logo"),
+    node("div","team-name",name || "TEAM")
   );
 
   if (points !== undefined) {
     panel.append(
-      textNode("div", "team-score", points)
+      node("div","points",Math.max(0,Number(points)||0))
     );
   }
 
   return panel;
 }
 
-function render() {
-  const mode = graphics.screen;
-  const screen = $("screen");
+function matchup(isHalftime) {
+  const wrap = node("div","matchup");
 
-  screen.classList.toggle("visible", mode !== "hidden");
-
-  if (mode === "hidden") return;
-
-  screen.style.setProperty(
-    "--host",
-    validColor(graphics.hostColor, "#e53935")
+  wrap.append(
+    teamPanel(
+      isHalftime ? score.homeName : graphics.nextHome,
+      isHalftime ? score.homeColor : graphics.nextHomeColor,
+      isHalftime ? score.homeLogo : graphics.nextHomeLogo,
+      isHalftime ? score.homeScore : undefined
+    ),
+    node("div","vs","VS"),
+    teamPanel(
+      isHalftime ? score.awayName : graphics.nextAway,
+      isHalftime ? score.awayColor : graphics.nextAwayColor,
+      isHalftime ? score.awayLogo : graphics.nextAwayLogo,
+      isHalftime ? score.awayScore : undefined
+    )
   );
 
-  $("tournament").textContent =
-    graphics.tournamentName || graphicsDefaults.tournamentName;
+  return wrap;
+}
 
-  $("hosted").textContent =
-    "HOSTED BY " +
-    (graphics.hostName || "LA HotWheels").toUpperCase();
+function render() {
+  const mode = previewMode
+    ? previewScreen
+    : graphics.screen;
 
-  const host = $("hostLogo");
+  const stage = $("stage");
+  const layout = $("layout");
 
-  if (/^https:\/\//i.test(graphics.hostLogo || "")) {
-    host.src = graphics.hostLogo;
-    host.style.display = "block";
-    host.onerror = () => host.style.display = "none";
-  } else {
-    host.removeAttribute("src");
-    host.style.display = "none";
-  }
-
-  const dynamic = $("dynamic");
-  dynamic.replaceChildren();
-
-  if (mode === "intermission") {
-    dynamic.append(
-      textNode("div", "headline", "WE'LL BE RIGHT BACK"),
-      textNode(
-        "div",
-        "subtitle",
-        "Tournament coverage resumes shortly"
-      )
-    );
-
-    const pulse = document.createElement("div");
-    pulse.className = "pulse";
-    dynamic.append(pulse);
+  if (!["intermission","upnext","halftime"].includes(mode)) {
+    stage.classList.remove("visible");
+    layout.replaceChildren();
     return;
   }
 
-  const halftime = mode === "halftime";
-
-  dynamic.append(
-    textNode(
-      "div",
-      "headline",
-      halftime ? "HALFTIME" : "UP NEXT"
-    )
+  stage.style.setProperty(
+    "--orange",
+    safeColor(graphics.hostColor,"#ff5816")
   );
 
-  const matchup = document.createElement("div");
-  matchup.className = "matchup";
+  layout.replaceChildren();
+  layout.append(brand(),tournament());
 
-  matchup.append(
-    teamNode(
-      halftime ? score.homeName : graphics.nextHome,
-      halftime ? score.homeColor : graphics.nextHomeColor,
-      halftime ? score.homeLogo : graphics.nextHomeLogo,
-      halftime ? score.homeScore : undefined
-    ),
-    textNode("div", "vs", halftime ? "–" : "VS"),
-    teamNode(
-      halftime ? score.awayName : graphics.nextAway,
-      halftime ? score.awayColor : graphics.nextAwayColor,
-      halftime ? score.awayLogo : graphics.nextAwayLogo,
-      halftime ? score.awayScore : undefined
-    )
-  );
+  if (mode === "intermission") {
+    layout.append(
+      heading("WE'LL BE","RIGHT BACK"),
+      node("div","accentbar"),
+      node("div","subheading","TOURNAMENT COVERAGE"),
+      node(
+        "div",
+        "hosted",
+        "HOSTED BY " + (graphics.hostName || "LA HotWheels")
+      )
+    );
+  }
 
-  dynamic.append(
-    matchup,
-    textNode(
-      "div",
-      "footer",
-      halftime
-        ? "SECOND HALF COMING UP"
-        : (graphics.nextTime || "COMING UP NEXT")
-    )
-  );
+  if (mode === "upnext") {
+    layout.append(
+      heading("UP","NEXT"),
+      matchup(false),
+      node(
+        "div",
+        "info",
+        graphics.nextTime || "COMING UP NEXT"
+      )
+    );
+  }
+
+  if (mode === "halftime") {
+    layout.append(
+      heading("HALF","TIME"),
+      matchup(true),
+      node(
+        "div",
+        "info",
+        "SECOND HALF COMING UP"
+      )
+    );
+  }
+
+  stage.classList.remove("visible");
+  void stage.offsetWidth;
+  stage.classList.add("visible");
 }
 
-function preview(screen) {
+function preview(mode) {
   if (!previewMode) return;
 
-  graphics.screen = screen;
+  previewScreen = mode;
+  $("testStatus").textContent = "Showing: " + mode;
   render();
-
-  $("testStatus").textContent =
-    "Showing: " + screen;
 }
 
 if (previewMode) {
   $("testPanel").hidden = false;
-  graphics.screen = "intermission";
+
+  // Demo teams and scores, only for preview without live data.
+  score = {
+    ...score,
+    homeName:"THE PACK",
+    awayName:"HOOPERS",
+    homeScore:42,
+    awayScore:38
+  };
 }
 
 render();
 
+/* Existing controller integration — unchanged event names */
 const url = params.get("url");
 const key = params.get("key");
-const room = params.get("room") || "hotwheels-basketball";
+const room = params.get("room") || "basketball1";
 
 if (url && key && window.supabase) {
-  const client = window.supabase.createClient(url, key);
+  const client = window.supabase.createClient(url,key);
 
-  const channel = client.channel("score-room-" + room, {
-    config: { broadcast: { self: false } }
-  });
+  const channel = client.channel(
+    "score-room-" + room,
+    {config:{broadcast:{self:false}}}
+  );
 
   channel
-    .on("broadcast", { event: "state" }, ({ payload }) => {
+    .on("broadcast",{event:"state"},({payload}) => {
       if (payload && typeof payload === "object") {
-        score = { ...score, ...payload };
+        score = {...score,...payload};
         render();
       }
     })
-    .on("broadcast", { event: "graphics-state" }, ({ payload }) => {
-      if (payload && typeof payload === "object") {
-        graphics = { ...graphics, ...payload };
-
-        // Preview mode remains under local test controls.
-        if (previewMode) {
-          graphics.screen = "intermission";
+    .on(
+      "broadcast",
+      {event:"graphics-state"},
+      ({payload}) => {
+        if (payload && typeof payload === "object") {
+          graphics = {...graphics,...payload};
+          render();
         }
-
-        render();
       }
-    })
+    )
     .subscribe(status => {
       if (status === "SUBSCRIBED") {
         channel.send({
-          type: "broadcast",
-          event: "request",
-          payload: { room }
+          type:"broadcast",
+          event:"request",
+          payload:{room}
         });
       }
     });
