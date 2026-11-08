@@ -1,0 +1,388 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LA HotWheels | ESPN Style Scoreboard V2</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 20px 32px;
+  pointer-events: none;
+}
+
+.scoreboard {
+  width: min(100%, 1000px);
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,.65));
+}
+
+.scorebar {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  height: 112px;
+  background: #101827;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 7px 7px 0 0;
+  overflow: hidden;
+}
+
+.team {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 20px;
+}
+
+.team.home {
+  background: #a81729;
+}
+
+.team.away {
+  background: #1552ae;
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.logo {
+  width: 65px;
+  height: 65px;
+  flex: 0 0 65px;
+  object-fit: contain;
+  display: none;
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,.35));
+}
+
+.team-name {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(14px, 2vw, 24px);
+  font-weight: 900;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.score {
+  font-size: clamp(36px, 4vw, 57px);
+  font-weight: 900;
+  min-width: 64px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.middle {
+  width: 110px;
+  flex: 0 0 110px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #172438;
+  border-left: 1px solid rgba(255,255,255,.2);
+  border-right: 1px solid rgba(255,255,255,.2);
+}
+
+.period-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #c5d3e9;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+}
+
+.quarter {
+  font-size: 27px;
+  font-weight: 900;
+}
+
+.branding {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 7px 12px;
+  background: #101827;
+  border: 1px solid rgba(255,255,255,.2);
+  border-top: none;
+  border-radius: 0 0 7px 7px;
+}
+
+.brand-name {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #b7c6dc;
+}
+
+.live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #f4c65e;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: #f43f5e;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(244,63,94,.7);
+}
+
+@media (max-width: 650px) {
+  .stage {
+    padding: 0 6px 15px;
+  }
+
+  .scorebar {
+    height: 78px;
+  }
+
+  .team {
+    padding: 6px;
+    gap: 5px;
+  }
+
+  .logo {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .team-name {
+    font-size: 12px;
+    letter-spacing: 0;
+  }
+
+  .score {
+    font-size: 31px;
+    min-width: 36px;
+  }
+
+  .middle {
+    width: 60px;
+    flex-basis: 60px;
+  }
+
+  .period-label {
+    font-size: 8px;
+    letter-spacing: 0;
+  }
+
+  .quarter {
+    font-size: 19px;
+  }
+
+  .branding {
+    min-height: 26px;
+    gap: 10px;
+  }
+
+  .brand-name {
+    font-size: 8px;
+    letter-spacing: .5px;
+  }
+
+  .live {
+    font-size: 9px;
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="stage">
+  <div class="scoreboard">
+
+    <div class="scorebar">
+
+      <div class="team home" id="homePanel">
+        <img class="logo" id="homeLogo" alt="Home logo">
+        <div class="team-name" id="homeName">THE PACK</div>
+        <div class="score" id="homeScore">42</div>
+      </div>
+
+      <div class="middle">
+        <div class="period-label">PERIOD</div>
+        <div class="quarter" id="quarter">Q3</div>
+      </div>
+
+      <div class="team away" id="awayPanel">
+        <img class="logo" id="awayLogo" alt="Away logo">
+        <div class="team-name" id="awayName">HOOPERS</div>
+        <div class="score" id="awayScore">38</div>
+      </div>
+
+    </div>
+
+    <div class="branding">
+      <div class="brand-name">
+        LA HOTWHEELS BASKETBALL
+      </div>
+      <div class="live">
+        <span class="live-dot"></span>
+        LIVE
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+
+const room = params.get("room") || "basketball1";
+const preview = params.get("preview") === "1";
+
+const defaults = {
+  homeName: "THE PACK",
+  awayName: "HOOPERS",
+  homeScore: 42,
+  awayScore: 38,
+  quarter: "Q3",
+  homeColor: "#a81729",
+  awayColor: "#1552ae",
+  homeLogo: "",
+  awayLogo: ""
+};
+
+let currentState = { ...defaults };
+
+function safeColor(value, fallback) {
+  return /^#[0-9a-f]{6}$/i.test(value || "")
+    ? value
+    : fallback;
+}
+
+function setLogo(id, url) {
+  const img = document.getElementById(id);
+
+  if (typeof url === "string" && url.trim()) {
+    img.onerror = () => {
+      img.style.display = "none";
+    };
+
+    img.src = url;
+    img.style.display = "block";
+  } else {
+    img.removeAttribute("src");
+    img.style.display = "none";
+  }
+}
+
+function render(state) {
+  currentState = {
+    ...currentState,
+    ...state
+  };
+
+  const s = currentState;
+
+  document.getElementById("homeName").textContent =
+    s.homeName || "HOME";
+
+  document.getElementById("awayName").textContent =
+    s.awayName || "AWAY";
+
+  document.getElementById("homeScore").textContent =
+    Math.max(0, Number(s.homeScore) || 0);
+
+  document.getElementById("awayScore").textContent =
+    Math.max(0, Number(s.awayScore) || 0);
+
+  document.getElementById("quarter").textContent =
+    s.quarter || "Q1";
+
+  document.getElementById("homePanel").style.background =
+    safeColor(s.homeColor, "#a81729");
+
+  document.getElementById("awayPanel").style.background =
+    safeColor(s.awayColor, "#1552ae");
+
+  setLogo("homeLogo", s.homeLogo);
+  setLogo("awayLogo", s.awayLogo);
+}
+
+render(defaults);
+
+const supabaseUrl = params.get("url");
+const supabaseKey = params.get("key");
+
+if (!preview && supabaseUrl && supabaseKey && window.supabase) {
+  const client = window.supabase.createClient(
+    supabaseUrl,
+    supabaseKey
+  );
+
+  const channel = client.channel(
+    "score-room-" + room,
+    {
+      config: {
+        broadcast: {
+          self: false
+        }
+      }
+    }
+  );
+
+  channel
+    .on(
+      "broadcast",
+      { event: "state" },
+      ({ payload }) => {
+        if (payload && typeof payload === "object") {
+          render(payload);
+        }
+      }
+    )
+    .subscribe(status => {
+      if (status === "SUBSCRIBED") {
+        channel.send({
+          type: "broadcast",
+          event: "request",
+          payload: { room }
+        });
+      }
+    });
+}
+</script>
+
+</body>
+</html>
