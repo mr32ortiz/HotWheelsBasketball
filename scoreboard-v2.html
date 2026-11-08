@@ -32,8 +32,13 @@ html, body {
   pointer-events: none;
 }
 
+/* Original scoreboard dimensions retained.
+   The entire design is scaled to 65%. */
 .scoreboard {
   width: min(100%, 1000px);
+  flex-shrink: 0;
+  transform: scale(0.65);
+  transform-origin: bottom center;
   filter: drop-shadow(0 6px 16px rgba(0,0,0,.65));
 }
 
